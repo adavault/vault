@@ -51,7 +51,7 @@ const hex = secp.utils.bytesToHex;
 	//create data structure to pass to the oracle
         const sharedKeyAO = await ed25519.getSharedSecret(privA, pubO);
 	console.log('\x1b[7m%s\x1b[0m', 'sharedKeyAO: ',hex(sharedKeyAO));
-	const dataO = hex(hashMessageA) + "," + "@walletB" + "," + "@SCaddr" + "," + ciphertextSymKeyA
+	const dataO = hex(hashMessageA) + "," + "@walletB" + "," + "@SCaddr" + "," + ciphertextSymKeyA + "," + hex(signMessageA)
 	//console.log('\x1b[7m%s\x1b[0m', 'dataO: ',dataO);
 	const ciphertextDataO = cryptoJS.AES.encrypt(dataO,hex(sharedKeyAO)).toString();
 	console.log('\x1b[7m%s\x1b[0m', 'ciphertextDataO: ',ciphertextDataO);
@@ -88,10 +88,11 @@ const hex = secp.utils.bytesToHex;
 		SCvalid = true;
 	}
 	console.log('\x1b[7m%s\x1b[0m', 'SCvalid: ',SCvalid); 
-	console.log('The Oracle returns data by submitting a txn to return wrapped key to Bob ...');
+	console.log('The Oracle returns data by submitting a txn to return wrapped key and message signature to Bob ...');
 	console.log('\x1b[7m%s\x1b[0m', 'destination wallet: ',arrayDataO[1]);
 	console.log('\x1b[7m%s\x1b[0m', 'smart contract address: ',arrayDataO[2]);
 	console.log('\x1b[7m%s\x1b[0m', 'wrapped key: ',arrayDataO[3]);
+	console.log('\x1b[7m%s\x1b[0m', 'message signature: ',arrayDataO[4]);
 	console.log('\n');
 
 //User Interface message recovery
