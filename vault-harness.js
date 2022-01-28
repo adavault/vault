@@ -127,7 +127,11 @@ const hex = secp.utils.bytesToHex;
         const hashMessageB = await secp.utils.sha256(plaintextMessageB);
         console.log('\x1b[7m%s\x1b[0m', 'hashMassageB: ',hex(hashMessageB));
 	const isSigned = await ed25519.verify(arrayDataB[1], hashMessageB, pubA);
-        console.log('\x1b[7m%s\x1b[0m', 'signedMessage: ',isSigned);
+        if (isSigned == true) {
+		console.log('\x1b[42m%s\x1b[0m', 'signedMessage: ', isSigned);
+	} else {
+        	console.log('\x1b[41m%s\x1b[0m', 'signedMessage: ', isSigned);
+	}
 	console.log('\n');
 
 })();
