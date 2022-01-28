@@ -43,29 +43,36 @@ const hex = secp.utils.bytesToHex;
 	console.log('\x1b[7m%s\x1b[0m', 'symKeyA: ',hex(symKeyA));
 	var ciphertextMessageA = cryptoJS.AES.encrypt(plaintextMessageA,hex(symKeyA)).toString();
 	console.log('\x1b[7m%s\x1b[0m', 'ciphertextMessageA: ',ciphertextMessageA);
-	console.log('\x1b[41m%s\x1b[0m', 'At this point we can store the encrypted message and collect the URL');
-	//create shared secret between Alice/Bob and wrap symmetric key
+	console.log('\x1b[41m%s\x1b[0m', '=>Alice stores the encrypted message @URL');
+	//create shared secret between Alice/Bob and wrap symmetric key, signature, URL)
 	const sharedKeyAB = await ed25519.getSharedSecret(privA, pubB);
 	console.log('\x1b[7m%s\x1b[0m', 'sharedKeyAB: ',hex(sharedKeyAB));
-	const ciphertextSymKeyA = cryptoJS.AES.encrypt(hex(symKeyA),hex(sharedKeyAB)).toString();
-	console.log('\x1b[7m%s\x1b[0m', 'ciphertextSymKeyA: ',ciphertextSymKeyA);
+	const DataB = hex(symKeyA)+ "," + hex(signMessageA) + "," + "@URL"
+	const ciphertextDataB = cryptoJS.AES.encrypt(DataB,hex(sharedKeyAB)).toString();
+	console.log('\x1b[7m%s\x1b[0m', 'ciphertextSymKeyA: ',ciphertextDataB);
 	//create data structure to pass to the oracle
         const sharedKeyAO = await ed25519.getSharedSecret(privA, pubO);
 	console.log('\x1b[7m%s\x1b[0m', 'sharedKeyAO: ',hex(sharedKeyAO));
-	const dataO = hex(hashMessageA) + "," + "@walletB" + "," + "@SCaddr" + "," + ciphertextSymKeyA + "," + hex(signMessageA) + "," + "@URL"
-	//console.log('\x1b[7m%s\x1b[0m', 'dataO: ',dataO);
+	const dataO = hex(hashMessageA) + "," + "@walletB" + "," + "@SCaddr" + "," + ciphertextDataB
+	console.log('\x1b[7m%s\x1b[0m', 'dataO: ',dataO);
 	const ciphertextDataO = cryptoJS.AES.encrypt(dataO,hex(sharedKeyAO)).toString();
 	console.log('\x1b[7m%s\x1b[0m', 'ciphertextDataO: ',ciphertextDataO);
-	//create data structure for the smart contract
+	//create data structure for the smart contract (pass wallet addresses so payments can be transferred)
 	const ciphertextDataSC = cryptoJS.AES.encrypt(hex(hashMessageA),hex(sharedKeyAO)).toString();
-	console.log('\x1b[7m%s\x1b[0m', 'ciphertextDataSC: ',ciphertextDataSC);
+	const dataSC = ciphertextDataSC + "," + "@walletA" + "," + "@walletB" + "," + "valEscrow";
+	console.log('\x1b[7m%s\x1b[0m', 'dataSC: ',dataSC);
+	console.log('\x1b[41m%s\x1b[0m', '=>Alice submits txn to oracle and smartcontract address');
 	console.log('\n');
 
 //Smart Contract Stub
         console.log('\x1b[37m\x1b[44m%s\x1b[0m', 'Smart Contract Stub');
+	console.log('\x1b[41m%s\x1b[0m', '=>Bob submits txn to recover key (via the UI)');
 	console.log('The smart contract cannot decrypt transaction metadata and must rely on the Oracle');
-	console.log('\x1b[7m%s\x1b[0m', 'ciphertextDataSC: ',ciphertextDataSC);
-	console.log('The smart contract to release the key is executed when Bob submits a transaction (including any payment) and success is based on time or relevant Oracle input.');
+	console.log('\x1b[7m%s\x1b[0m', 'dataSC: ',dataSC);
+        var arrayDataSC = dataSC.split(",");
+	const ciphertextHashSC = arrayDataSC[0]
+        console.log('\x1b[7m%s\x1b[0m', 'ciphertextHashSC: ',ciphertextHashSC);
+	console.log('The smart contract to release the key is executed when Bob submits txn (including any payment) and success is based on time or relevant Oracle input.');
 	console.log('Output goes to a wallet address @ORACLEaddr (can be passed into contract) that is monitored by the oracle.');
 	console.log('\n');
 
@@ -80,8 +87,8 @@ const hex = secp.utils.bytesToHex;
 	var arrayDataO = plaintextDataO.split(",");
         console.log('\x1b[7m%s\x1b[0m', 'plaintextDataO: ',plaintextDataO);
 	//check that the data passed from smart contract is correct
-	console.log('Oracle checks the SC data that has been passed in against the hash ...');
-	var plaintextDataSC = cryptoJS.AES.decrypt(ciphertextDataSC,hex(sharedKeyOA));
+	console.log('Oracle checks the decrypted ciphertextHashSC == hashMessageA AND @SCaddr == txn addr');
+	var plaintextDataSC = cryptoJS.AES.decrypt(ciphertextHashSC,hex(sharedKeyOA));
         plaintextDataSC = plaintextDataSC.toString(cryptoJS.enc.Utf8);
         console.log('\x1b[7m%s\x1b[0m', 'plaintextDataSC: ',plaintextDataSC);
 	var SCvalid = false;
@@ -92,30 +99,35 @@ const hex = secp.utils.bytesToHex;
 	console.log('The Oracle returns data by submitting a txn to return wrapped key, message signature and URL to Bob ...');
 	console.log('\x1b[7m%s\x1b[0m', 'destination wallet: ',arrayDataO[1]);
 	console.log('\x1b[7m%s\x1b[0m', 'smart contract address: ',arrayDataO[2]);
-	console.log('\x1b[7m%s\x1b[0m', 'wrapped key: ',arrayDataO[3]);
-	console.log('\x1b[7m%s\x1b[0m', 'message signature: ',arrayDataO[4]);
-	console.log('\x1b[7m%s\x1b[0m', 'URL: ',arrayDataO[5]);
-	console.log('\x1b[41m%s\x1b[0m', 'At this point contract executes to provide asset to Bob and can also return payment to Alice');
+	console.log('\x1b[7m%s\x1b[0m', 'wrapped data for Bob: ',arrayDataO[3]);
+	console.log('\x1b[41m%s\x1b[0m', '=>Oracle submits txn to provide key to Bob and can also return payment to Alice');
 	console.log('\n');
 
 //User Interface message recovery
         console.log('\x1b[37m\x1b[44m%s\x1b[0m', 'User Interface message recovery');
+        console.log('\x1b[7m%s\x1b[0m', 'ciphertextDataB: ',ciphertextDataB);
         //create shared secret betwen Bob/Alice and decrypt symKeyA
-        console.log('\x1b[7m%s\x1b[0m', 'ciphertextSymKeyA: ',ciphertextSymKeyA);
         const sharedKeyBA = await ed25519.getSharedSecret(privB, pubA);
         console.log('\x1b[7m%s\x1b[0m', 'sharedKeyBA: ',hex(sharedKeyBA));
-        var symKeyB = cryptoJS.AES.decrypt(ciphertextSymKeyA,hex(sharedKeyBA));
-        symKeyB = symKeyB.toString(cryptoJS.enc.Utf8);
-        console.log('\x1b[7m%s\x1b[0m', 'symKeyB: ',symKeyB);
+	//decrypt data structure and process
+        var plaintextDataB = cryptoJS.AES.decrypt(ciphertextDataB,hex(sharedKeyBA));
+        plaintextDataB = plaintextDataB.toString(cryptoJS.enc.Utf8);
+        console.log('\x1b[7m%s\x1b[0m', 'plaintextDataB: ',plaintextDataB);
+	//split out key, signature, URL
+        var arrayDataB = plaintextDataB.split(",");
+	console.log('\x1b[7m%s\x1b[0m', 'symKeyA: ',arrayDataB[0]);
+	console.log('\x1b[7m%s\x1b[0m', 'signMessageA: ',arrayDataB[1]);
+	console.log('\x1b[7m%s\x1b[0m', 'URL: ',arrayDataB[2]);
+	console.log('\x1b[41m%s\x1b[0m', '=>Bob recovers asset and decrypts');
 	//decrypt ciphertext message using symKey
-        var plaintextMessageB = cryptoJS.AES.decrypt(ciphertextMessageA,symKeyB);
+        var plaintextMessageB = cryptoJS.AES.decrypt(ciphertextMessageA,arrayDataB[0]);
         plaintextMessageB = plaintextMessageB.toString(cryptoJS.enc.Utf8);
         console.log('\x1b[7m%s\x1b[0m', 'plaintextMessageB: ',plaintextMessageB);
-	//create hash and verify signature
+	//calculate hash and verify against signMessageA
         const hashMessageB = await secp.utils.sha256(plaintextMessageB);
         console.log('\x1b[7m%s\x1b[0m', 'hashMassageB: ',hex(hashMessageB));
-	const isSigned = await ed25519.verify(signMessageA, hashMessageB, pubA);
-        console.log('\x1b[7m%s\x1b[0m', 'signMessage: ',isSigned);
+	const isSigned = await ed25519.verify(arrayDataB[1], hashMessageB, pubA);
+        console.log('\x1b[7m%s\x1b[0m', 'signedMessage: ',isSigned);
 	console.log('\n');
 
 })();
