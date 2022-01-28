@@ -16,8 +16,10 @@ const hex = secp.utils.bytesToHex;
 //Set up key pairs for test harness
 	console.log('\x1b[37m\x1b[44m%s\x1b[0m', 'Set up key pairs for test harness');
 	const privA = ed25519.utils.randomPrivateKey(); // 32-byte Uint8Array or string.
+	//var privA = "5820e9c6958a5bad511750d29912a3729858620d44d5312d199ae76004dd68b44779";
 	console.log('\x1b[30m\x1b[43m%s\x1b[0m', 'privA: ', hex(privA));
 	const pubA = await ed25519.getPublicKey(privA);
+	//const pubA = encoder.encode('582038abfa38df63de892b56756c6a1153242351fae20f0efa6450e72e9f9eb6e136');
 	console.log('\x1b[30m\x1b[43m%s\x1b[0m', 'pubA: ',hex(pubA));
         const privB = ed25519.utils.randomPrivateKey(); // 32-byte Uint8Array or string.
         console.log('\x1b[30m\x1b[43m%s\x1b[0m', 'privB: ',hex(privB));
@@ -94,8 +96,10 @@ const hex = secp.utils.bytesToHex;
 	var SCvalid = false;
 	if (arrayDataO[0] = plaintextDataSC) {
 		SCvalid = true;
+		console.log('\x1b[42m%s\x1b[0m', 'SCvalid: ',SCvalid);
+	} else {
+		console.log('\x1b[7m%s\x1b[0m', 'SCvalid: ',SCvalid); 
 	}
-	console.log('\x1b[7m%s\x1b[0m', 'SCvalid: ',SCvalid); 
 	console.log('The Oracle returns data by submitting a txn to return wrapped key, message signature and URL to Bob ...');
 	console.log('\x1b[7m%s\x1b[0m', 'destination wallet: ',arrayDataO[1]);
 	console.log('\x1b[7m%s\x1b[0m', 'smart contract address: ',arrayDataO[2]);
